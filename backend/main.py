@@ -81,11 +81,8 @@ async def lifespan(app: FastAPI):
                 secret_key=LANGFUSE_SECRET_KEY,
                 host=LANGFUSE_HOST,
             )
-            if hasattr(lf, "start_observation"):
-                state["langfuse"] = lf
-                print(f"Langfuse tracing enabled -> {LANGFUSE_HOST}")
-            else:
-                print("Langfuse installed but incompatible API. Tracing disabled.")
+            state["langfuse"] = lf
+            print(f"Langfuse tracing enabled -> {LANGFUSE_HOST}")
         except Exception as e:
             print(f"Langfuse tracing disabled (failed to initialize: {e})")
     else:
@@ -235,9 +232,8 @@ def call_llm(query: str, lf_trace=None) -> dict:
     usage_snapshot: dict = {}
     lf_gen = None
     if lf_trace:
-        lf_gen = lf_trace.start_observation(
+        lf_gen = lf_trace.generation(
             name="filter-extraction",
-            as_type="generation",
             model=LLM_MODEL,
             input=[
                 {"role": "system", "content": system_prompt},
@@ -281,19 +277,18 @@ def call_llm(query: str, lf_trace=None) -> dict:
                     f" completion={u.completion_tokens} reasoning={reasoning}"
                 )
             if lf_gen:
-                lf_gen.update(
+                lf_gen.end(
                     output=content,
-                    usage_details={
+                    usage={
                         "input":  usage_snapshot.get("prompt_tokens", 0),
                         "output": usage_snapshot.get("completion_tokens", 0),
+                        "cache_read_input_tokens": usage_snapshot.get("cached_tokens", 0),
                     },
                 )
-                lf_gen.end()
             break
         except Exception as e:
             if lf_gen:
-                lf_gen.update(level="ERROR", status_message=str(e))
-                lf_gen.end()
+                lf_gen.end(level="ERROR", status_message=str(e))
             msg = str(e).lower()
             transient = any(t in msg for t in ("timeout", "connection", "rate", "503", "502"))
             if attempt == 0 and transient:
@@ -647,9 +642,8 @@ def query_companies(request: QueryRequest):
     lf_trace = None
     if lf:
         try:
-            lf_trace = lf.start_observation(
+            lf_trace = lf.trace(
                 name="company-query",
-                as_type="span",
                 input={"query": query, "use_reranker": request.use_reranker},
                 metadata={"model": LLM_MODEL},
             )
@@ -662,8 +656,7 @@ def query_companies(request: QueryRequest):
     except Exception as e:
         traceback.print_exc()
         if lf_trace:
-            lf_trace.update(level="ERROR", status_message=f"LLM error: {e}")
-            lf_trace.end()
+            lf_trace.update(output={"error": f"LLM error: {e}"})
         raise HTTPException(status_code=502, detail=f"LLM error: {e}")
     timings["llm_ms"] = round((time.perf_counter() - t0) * 1000)
     timings["llm_usage"] = llm_output.pop("_usage", {})
@@ -672,12 +665,11 @@ def query_companies(request: QueryRequest):
     semantic_query = llm_output.get("semantic_query") or query
 
     if lf_trace:
-        lf_trace.start_observation(
+        lf_trace.span(
             name="llm-parsed-filters",
-            as_type="span",
             input={"query": query},
             output={"structured_filters": filters, "semantic_query": semantic_query},
-        ).end()
+        )
 
     t0 = time.perf_counter()
     is_hard = hard_filter_active(filters)
@@ -685,13 +677,12 @@ def query_companies(request: QueryRequest):
     timings["filter_ms"] = round((time.perf_counter() - t0) * 1000)
 
     if lf_trace:
-        lf_trace.start_observation(
+        lf_trace.span(
             name="hard-filter",
-            as_type="span",
             input={"filters": {k: v for k, v in filters.items() if k in HARD_FILTER_KEYS}, "corpus_size": len(state["df"])},
             output={"companies_after_hard_filter": len(hard_indices)},
             metadata={"filter_active": is_hard},
-        ).end()
+        )
 
     t0 = time.perf_counter()
     cat_active = categorical_filter_active(filters)
@@ -709,9 +700,8 @@ def query_companies(request: QueryRequest):
     timings["categorical_ms"] = round((time.perf_counter() - t0) * 1000)
 
     if lf_trace:
-        lf_trace.start_observation(
+        lf_trace.span(
             name="categorical-filter",
-            as_type="span",
             input={
                 "naics_labels":    list(filters.get("naics_labels") or []),
                 "target_markets":  list(filters.get("target_markets") or []),
@@ -719,7 +709,7 @@ def query_companies(request: QueryRequest):
             },
             output={"companies_passed_categorical": len(categorical_pass)},
             metadata={"filter_active": cat_active},
-        ).end()
+        )
 
     t0 = time.perf_counter()
     restrict = hard_indices if (is_hard or cat_active) else None
@@ -727,13 +717,12 @@ def query_companies(request: QueryRequest):
     timings["dense_ms"] = round((time.perf_counter() - t0) * 1000)
 
     if lf_trace:
-        lf_trace.start_observation(
+        lf_trace.span(
             name="dense-retrieval",
-            as_type="span",
             input={"semantic_query": semantic_query, "restrict_to_count": len(restrict) if restrict else None},
             output={"candidates_found": len(dense_scores)},
             metadata={"mode": "filtered" if restrict else "pure-semantic"},
-        ).end()
+        )
 
     if cat_active:
         dense_ranked = sorted(
@@ -781,9 +770,8 @@ def query_companies(request: QueryRequest):
     ranked.sort(key=lambda x: x[5], reverse=True)
 
     if lf_trace:
-        lf_trace.start_observation(
+        lf_trace.span(
             name="scoring-and-gating",
-            as_type="span",
             input={"pool_size": len(final_pool)},
             output={"survivors": len(ranked)},
             metadata={
@@ -792,7 +780,7 @@ def query_companies(request: QueryRequest):
                 "score_threshold": SCORE_THRESHOLD,
                 "naics_bypass_threshold": NAICS_BYPASS_THRESHOLD,
             },
-        ).end()
+        )
 
     rerank_ms = 0
     if request.use_reranker and ranked:
@@ -844,7 +832,6 @@ def query_companies(request: QueryRequest):
                 "use_reranker": request.use_reranker,
             },
         )
-        lf_trace.end()
 
     return {
         "query": query,

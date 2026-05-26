@@ -2,7 +2,7 @@
 
 A company search system that takes a natural-language query and returns ranked, relevant companies from a corpus of around 450 records. An LLM extracts structured filters from the query, then hybrid vector search and scoring surface the best matches.
 
-The frontend includes a world-map data explorer for filters and null values and an LLM-powered intent search. See the [demo video](https://youtu.be/TODO) or run locally with the steps below.
+The frontend includes a world-map data explorer for filters and null values and an LLM-powered intent search. See the [demo video](https://drive.google.com/file/d/1q7Lr8Q0_e1ck59jvtfUZpSJRqfMnHX8O/view?usp=drive_link) or run locally with the steps below.
 
 ## Quick start
 
