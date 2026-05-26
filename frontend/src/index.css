@@ -1,0 +1,160 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  /* Backgrounds */
+  --bg: #F9FAFB;
+  --surface: #FFFFFF;
+  --surface-dim: #F3F4F6;
+
+  /* Borders */
+  --border: #E5E7EB;
+  --border-dark: #D1D5DB;
+
+  /* Primary — amber/gold */
+  --primary: #FFB800;
+  --primary-hover: #E6A600;
+  --primary-light: #FEF3C7;
+
+  /* Indigo accent */
+  --indigo: #6366F1;
+  --indigo-light: rgba(99, 102, 241, 0.08);
+
+  /* Text */
+  --text: #111827;
+  --text-muted: #6B7280;
+  --dim: #9CA3AF;
+
+  /* Semantic */
+  --success: #10B981;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+
+  /* Typography */
+  --font-body: 'Manrope', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Backward-compat aliases */
+  --accent-gold: var(--primary);
+  --accent-blue-hex: var(--indigo);
+
+  /* Legacy aliases (keep for gradual migration) */
+  --surface2: #E9ECF0;
+  --border2: var(--border-dark);
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--surface-dim); }
+::-webkit-scrollbar-thumb { background: var(--border-dark); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--dim); }
+
+/* Shimmer skeleton */
+@keyframes shimmer {
+  0% { background-position: -600px 0; }
+  100% { background-position: 600px 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface-dim) 25%,
+    #E9ECF0 50%,
+    var(--surface-dim) 75%
+  );
+  background-size: 600px 100%;
+  animation: shimmer 1.4s infinite linear;
+  border-radius: 4px;
+}
+
+/* Card utility */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* Tags / chips */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-family: var(--font-body);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+/* Indigo — filters, target markets, secondary info */
+.tag-cyan {
+  background: var(--indigo-light);
+  color: var(--indigo);
+  border: 1px solid rgba(99, 102, 241, 0.22);
+}
+
+/* Amber/gold — semantic, business models */
+.tag-purple {
+  background: rgba(255, 184, 0, 0.12);
+  color: #92600A;
+  border: 1px solid rgba(255, 184, 0, 0.35);
+}
+
+/* Emerald green */
+.tag-green {
+  background: rgba(16, 185, 129, 0.08);
+  color: var(--success);
+  border: 1px solid rgba(16, 185, 129, 0.22);
+}
+
+/* Warning amber */
+.tag-amber {
+  background: rgba(245, 158, 11, 0.08);
+  color: var(--warning);
+  border: 1px solid rgba(245, 158, 11, 0.22);
+}
+
+/* Neutral gray */
+.tag-gray {
+  background: var(--surface-dim);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+/* Divider */
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+}
+
+/* Gallery slide animations */
+@keyframes slideFromRight {
+  from { opacity: 0; transform: translateX(28px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideFromLeft {
+  from { opacity: 0; transform: translateX(-28px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.gallery-slide-right { animation: slideFromRight 0.28s ease; }
+.gallery-slide-left  { animation: slideFromLeft  0.28s ease; }

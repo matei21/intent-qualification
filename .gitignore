@@ -1,0 +1,31 @@
+# Python
+venv/
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Env
+backend/.env
+.env
+
+# Data 
+data/companies_parsed.pkl
+data/embeddings_cache.pkl
+data/companies.jsonl
+data/companies_no_duplicates.jsonl
+
+# Models
+models/
+.cache/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
