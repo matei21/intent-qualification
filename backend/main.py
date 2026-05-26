@@ -119,7 +119,7 @@ async def lifespan(app: FastAPI):
     print(f"Filters: {len(state['country_codes'])} countries, "
           f"{len(state['business_models'])} business models, "
           f"{len(state['naics_labels'])} NAICS labels, "
-          f"{len(state['target_markets_all'])} target markets (freq≥2; "
+          f"{len(state['target_markets_all'])} target markets (freq>=2; "
           f"{sum(1 for c in tm_freq.values() if c < 2)} singletons dropped).")
     print("Backend ready.")
     yield
